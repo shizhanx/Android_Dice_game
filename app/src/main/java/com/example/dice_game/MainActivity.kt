@@ -2,6 +2,8 @@ package com.example.dice_game
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.random.Random
@@ -20,12 +22,39 @@ class MainActivity : AppCompatActivity() {
         R.drawable.dice6,
     )
     private var playerTurn = true
+    private val handler = Handler(Looper.getMainLooper())
+    private lateinit var computerTurn: Runnable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         updateText()
+        computerTurn = Runnable {
+            if (!playerTurn && computerTurnScore < 20) {
+                roll().also {
+                    when (it) {
+                        1 -> {
+                            computerOverallScore -= computerTurnScore
+                            computerTurnScore = 0
+                            playerTurn = true
+                        }
+                        else -> {
+                            computerTurnScore += it
+                            computerOverallScore += it
+                        }
+                    }
+                }
+                if (computerTurnScore >= 20) {
+                    computerTurnScore = 0
+                    playerTurn = true
+                }
+                updateText()
+                handler.postDelayed(computerTurn, 500)
+            } else {
+                handler.removeCallbacks(computerTurn)
+            }
+        }
     }
 
     fun onClickRoll(view: View) {
@@ -35,7 +64,8 @@ class MainActivity : AppCompatActivity() {
                     1 -> {
                         playerOverallScore -= playerTurnScore
                         playerTurnScore = 0
-                        computerTurn()
+                        playerTurn = false
+                        handler.postDelayed(computerTurn, 500)
                     }
                     else -> {
                         playerTurnScore += it
@@ -61,7 +91,8 @@ class MainActivity : AppCompatActivity() {
         if (playerTurn) {
             playerTurnScore = 0
             updateText()
-            computerTurn()
+            playerTurn = false
+            handler.postDelayed(computerTurn, 500)
         }
     }
 
@@ -69,28 +100,6 @@ class MainActivity : AppCompatActivity() {
         val i: Int = Random.nextInt(6)
         imageView.setImageResource(diceFaceSource[i])
         return i + 1
-    }
-
-    private fun computerTurn() {
-        playerTurn = false
-        while (computerTurnScore < 20 && !playerTurn) {
-            roll().also {
-                when (it) {
-                    1 -> {
-                        computerOverallScore -= computerTurnScore
-                        computerTurnScore = 0
-                        playerTurn = true
-                    }
-                    else -> {
-                        computerTurnScore += it
-                        computerOverallScore += it
-                    }
-                }
-            }
-            updateText()
-        }
-        computerTurnScore = 0
-        playerTurn = true
     }
 
     private fun updateText() {
