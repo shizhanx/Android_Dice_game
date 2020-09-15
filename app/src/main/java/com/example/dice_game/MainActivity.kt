@@ -28,20 +28,14 @@ class MainActivity : AppCompatActivity() {
         updateText()
     }
 
-    private fun roll(): Int {
-        val i: Int = Random.nextInt(6)
-        imageView.setImageResource(diceFaceSource[i])
-        return i + 1
-    }
-
-    public fun onClickRoll(view: View): Unit {
+    fun onClickRoll(view: View) {
         if (playerTurn) {
             roll().also {
                 when (it) {
                     1 -> {
                         playerOverallScore -= playerTurnScore
                         playerTurnScore = 0
-                        playerTurn = false
+                        computerTurn()
                     }
                     else -> {
                         playerTurnScore += it
@@ -49,27 +43,58 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+            updateText()
         }
-        updateText()
     }
 
-    public fun onClickReset(view: View): Unit {
-        playerOverallScore = 0
-        playerTurnScore = 0
-        computerOverallScore = 0
+    fun onClickReset(view: View) {
+        if (playerTurn) {
+            playerOverallScore = 0
+            playerTurnScore = 0
+            computerOverallScore = 0
+            computerTurnScore = 0
+            updateText()
+        }
+    }
+
+    fun onClickHold(view: View) {
+        if (playerTurn) {
+            playerTurnScore = 0
+            updateText()
+            computerTurn()
+        }
+    }
+
+    private fun roll(): Int {
+        val i: Int = Random.nextInt(6)
+        imageView.setImageResource(diceFaceSource[i])
+        return i + 1
+    }
+
+    private fun computerTurn() {
+        playerTurn = false
+        while (computerTurnScore < 20 && !playerTurn) {
+            roll().also {
+                when (it) {
+                    1 -> {
+                        computerOverallScore -= computerTurnScore
+                        computerTurnScore = 0
+                        playerTurn = true
+                    }
+                    else -> {
+                        computerTurnScore += it
+                        computerOverallScore += it
+                    }
+                }
+            }
+            updateText()
+        }
         computerTurnScore = 0
         playerTurn = true
-        updateText()
     }
 
-    public fun onClickHold(view: View): Unit {
-        playerTurn = false
-        playerTurnScore = 0
-        updateText()
-    }
-
-    private fun updateText(): Unit {
-        val s = if (playerTurnScore == 0) "" else " Your turn score: $playerTurnScore"
+    private fun updateText() {
+        val s = if (playerTurnScore == 0) "" else ", Your turn score: $playerTurnScore"
         textView.text = getString(R.string.init_score, playerOverallScore, computerOverallScore, s)
     }
 }
